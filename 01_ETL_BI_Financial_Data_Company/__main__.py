@@ -10,12 +10,17 @@ def get_alpha_financials(statement, ticker, api_key):
         data = r.json()
         print(f'Llamado al {statement} exitoso')
 
-        if 'annualReports' not in data:
-            print(f"No se encontró 'annualReports' en la respuesta: {data}")
-            return pd.DataFrame()
+        if 'annualReports' in data:
+            df = pd.json_normalize(data['annualReports'])
+            return df
 
-        df = pd.json_normalize(data['annualReports'])
-        return df
+        elif 'annualEarnings' in data:
+            df = pd.json_normalize(data['annualEarnings'])
+            return df
+
+        else:
+            print(f"No se encontró ni 'annualReports' ni 'annualEarnings' en la respuesta: {data}")
+            return pd.DataFrame()
 
     except Exception as e:
         print(f'Error {e} llamando a la API')
@@ -34,7 +39,8 @@ def incremental_csv_writer(df_new, file_path):
 
 
 if __name__ == "__main__":
-    statements = ['INCOME_STATEMENT', 'BALANCE_SHEET', 'CASH_FLOW']
+    
+    statements = ['INCOME_STATEMENT', 'BALANCE_SHEET', 'CASH_FLOW', 'EARNINGS']
     ticker = input("Write the company's ticker: ").upper()
     api_key = "CYR8CFKJA6X64BOR"  # Reemplaza por tu API key real
 
@@ -48,3 +54,9 @@ if __name__ == "__main__":
             incremental_csv_writer(df, file_path)
         else:
             print(f"No hay datos para guardar para {statement}")
+            
+df_ticker = pd.DataFrame([[ticker]], columns=['Ticker'])
+file_ticker_path = os.path.join("dataset", f"TICKERS.csv")
+incremental_csv_writer(df_ticker, file_ticker_path)
+            
+    
